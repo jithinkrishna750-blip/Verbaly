@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordSpark - Fun Interactive Thesaurus & Dictionary</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                        },
+                        spark: {
+                            purple: '#8b5cf6',
+                            pink: '#ec4899',
+                            yellow: '#f59e0b',
+                            teal: '#14b8a6',
+                            cyan: '#06b6d4',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                        serif: ['Fredoka', 'Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-spark { font-family: 'Fredoka', sans-serif; }
+        
+        /* Custom scrollbar for clean aesthetic */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+        /* Welcome Intro Animations */
+        @keyframes welcomePulse {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.1) rotate(5deg); opacity: 0.9; }
+        }
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+        .animate-welcome-logo {
+            animation: welcomePulse 2.5s ease-in-out infinite, floatIcon 3.5s ease-in-out infinite;
+        }
+
+        /* Floating Assistant Animation */
+        @keyframes assistantFloat {
+            0%, 100% { transform: translateY(0px) rotate(-3deg); }
+            50% { transform: translateY(-8px) rotate(3deg); }
+        }
+        .animate-assistant {
+            animation: assistantFloat 3.5s ease-in-out infinite;
+        }
+        
+        /* Playful Bounce Hover */
+        .hover-bounce:hover {
+            transform: translateY(-3px) scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-amber-50/40 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <!-- Welcome Screen Overlay -->
+    <div id="welcome-screen" class="fixed inset-0 z-50 bg-gradient-to-br from-indigo-950 via-slate-950 to-purple-950 flex flex-col items-center justify-center text-white transition-opacity duration-700 pointer-events-auto">
+        <!-- Ambient Glowing Background Circles -->
+        <div class="absolute w-96 h-96 bg-amber-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute w-72 h-72 bg-pink-500/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+
+        <div class="relative z-10 flex flex-col items-center text-center px-6">
+            <!-- Animated Icon Badge -->
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-2xl shadow-pink-500/40 mb-6 animate-welcome-logo">
+                <i class="fa-solid fa-wand-magic-sparkles text-5xl"></i>
+            </div>
+
+            <!-- Welcome Text -->
+            <h1 class="text-5xl sm:text-6xl font-extrabold font-spark tracking-wide bg-gradient-to-r from-yellow-300 via-pink-400 to-purple-300 bg-clip-text text-transparent">
+                WordSpark ✨
+            </h1>
+            <p class="mt-3 text-base sm:text-lg text-slate-200 font-medium max-w-md">
+                Ignite your vocabulary with fun words, definitions & magic synonyms! 🚀
+            </p>
+
+            <!-- Loading Indicator Dots -->
+            <div class="mt-8 flex items-center space-x-2">
+                <div class="w-3 h-3 rounded-full bg-amber-400 animate-bounce"></div>
+                <div class="w-3 h-3 rounded-full bg-pink-400 animate-bounce [animation-delay:0.2s]"></div>
+                <div class="w-3 h-3 rounded-full bg-purple-400 animate-bounce [animation-delay:0.4s]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-3 z-50 pointer-events-none border border-slate-700 dark:border-slate-200">
+        <i id="toast-icon" class="fa-solid fa-star text-amber-400"></i>
+        <span id="toast-message" class="text-sm font-semibold">Copied to clipboard!</span>
+    </div>
+
+    <!-- Cute Virtual Assistant (Lexi) -->
+    <div id="assistant-container" class="fixed bottom-5 left-5 z-40 flex flex-col items-start space-y-2">
+        <!-- Assistant Dialogue Bubble -->
+        <div id="assistant-bubble" class="hidden max-w-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 p-4 rounded-3xl shadow-2xl border-2 border-amber-300 dark:border-slate-700 relative text-xs sm:text-sm animate-fade-in transition-all">
+            <button onclick="toggleAssistantBubble()" class="absolute top-2 right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center space-x-2 font-spark font-bold text-amber-500 text-base mb-1">
+                <i class="fa-solid fa-face-smile-beam"></i>
+                <span>Lexi the Word Buddy</span>
+            </div>
+            <p id="assistant-text" class="leading-relaxed font-medium">Hey student superstar! 🌟 Ready to find awesome alternative words and fun meanings?</p>
+            <div class="mt-3 pt-2 border-t border-amber-100 dark:border-slate-700 flex flex-wrap gap-1.5">
+                <button onclick="askAssistantRandomWord()" class="px-2.5 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded-xl text-xs font-bold hover:bg-amber-200 transition-colors">✨ Surprise Word!</button>
+                <button onclick="askAssistantTip()" class="px-2.5 py-1 bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-bold hover:bg-purple-200 transition-colors">💡 Study Tip</button>
+            </div>
+            <!-- Bubble Arrow pointing down to assistant button -->
+            <div class="absolute -bottom-2 left-6 w-4 h-4 bg-white dark:bg-slate-800 border-b-2 border-r-2 border-amber-300 dark:border-slate-700 transform rotate-45"></div>
+        </div>
+
+        <!-- Assistant Avatar Button -->
+        <button onclick="toggleAssistantBubble()" class="group relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-500 rounded-full shadow-lg shadow-pink-500/30 hover:scale-110 active:scale-95 transition-all duration-300 animate-assistant border-4 border-white dark:border-slate-800" title="Talk to Lexi!">
+            <!-- Cute Face Icon -->
+            <div class="relative text-white text-3xl group-hover:rotate-12 transition-transform">
+                <i id="assistant-icon" class="fa-solid fa-face-laugh-beam"></i>
+            </div>
+            <!-- Notification Ping Badge -->
+            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 bg-yellow-500"></span>
+            </span>
+        </button>
+    </div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b-2 border-amber-200/60 dark:border-slate-800">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3.5 cursor-pointer" onclick="resetToHome()">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-pink-500/25 hover:rotate-6 transition-transform">
+                    <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold font-spark tracking-wider bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 bg-clip-text text-transparent">WordSpark</h1>
+                    <p class="text-xs font-semibold text-purple-600 dark:text-purple-400 tracking-wide uppercase">The Fun Student Dictionary</p>
+                </div>
+            </div>
+
+            <!-- Controls (Theme Toggle & Favorites) -->
+            <div class="flex items-center space-x-2.5">
+                <button id="bookmark-btn" onclick="toggleFavoriteCurrent()" class="p-3 rounded-2xl bg-amber-100/70 text-amber-600 dark:bg-slate-800 dark:text-amber-400 hover:bg-amber-200 transition-colors hidden" title="Save to Favorites">
+                    <i id="bookmark-icon" class="fa-regular fa-star text-xl"></i>
+                </button>
+
+                <button id="favorites-toggle-btn" onclick="toggleFavoritesDrawer()" class="p-3 rounded-2xl bg-purple-100/70 text-purple-600 dark:bg-slate-800 dark:text-purple-300 hover:bg-purple-200 transition-colors relative" title="View Saved Words">
+                    <i class="fa-solid fa-bookmark text-xl"></i>
+                    <span id="fav-count-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs font-extrabold rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+
+                <button id="theme-toggle" class="p-3 rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-amber-400 hover:bg-slate-200 transition-colors" title="Toggle Theme">
+                    <i id="theme-icon" class="fa-solid fa-moon text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col space-y-8">
+        
+        <!-- Hero & Search Bar Section -->
+        <section class="text-center max-w-3xl mx-auto w-full pt-2">
+            <!-- Student Friendly Header Badge -->
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider mb-3 border border-amber-300/60">
+                <i class="fa-solid fa-graduation-cap text-amber-500"></i>
+                <span>Vocabulary Booster for Students</span>
+            </div>
+
+            <h2 class="text-4xl sm:text-5xl font-extrabold font-spark tracking-tight text-slate-900 dark:text-white leading-tight">
+                Supercharge Your Words! 🚀
+            </h2>
+            <p class="mt-2 text-base sm:text-lg text-slate-600 dark:text-slate-300 font-medium">
+                Type any word to unlock bright definitions, alternative words (synonyms), and opposites (antonyms).
+            </p>
+
+            <!-- Search Form -->
+            <form id="search-form" class="mt-6 relative flex items-center">
+                <div class="relative w-full shadow-xl rounded-3xl border-2 border-amber-300 dark:border-slate-700 focus-within:border-pink-500 dark:focus-within:border-pink-500 transition-all bg-white dark:bg-slate-800">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-amber-500 text-xl">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </div>
+                    <input type="text" id="word-input" 
+                           class="w-full pl-14 pr-28 py-4.5 text-slate-900 dark:text-white bg-transparent rounded-3xl focus:outline-none text-lg font-medium"
+                           placeholder="Enter a word (e.g., Joyful, Brave, Explore)..."
+                           autocomplete="off" spellcheck="false" required>
+                    <button type="submit" 
+                            class="absolute right-2 top-2 bottom-2 px-6 bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 hover:opacity-90 text-white font-spark font-bold rounded-2xl transition-all flex items-center space-x-2 shadow-md hover:scale-105 active:scale-95 text-base">
+                        <span>Search!</span>
+                        <i class="fa-solid fa-bolt text-yellow-300"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Suggestion Chips -->
+            <div class="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
+                <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider flex items-center">
+                    <i class="fa-solid fa-sparkles text-amber-400 mr-1"></i> Try These:
+                </span>
+                <button onclick="lookupWord('cheerful')" class="px-4 py-1.5 bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-full hover:border-pink-400 hover:text-pink-600 dark:hover:text-pink-400 transition-all text-xs font-bold shadow-sm hover-bounce">😄 cheerful</button>
+                <button onclick="lookupWord('curious')" class="px-4 py-1.5 bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-full hover:border-purple-400 hover:text-purple-600 dark:hover:text-purple-400 transition-all text-xs font-bold shadow-sm hover-bounce">🧐 curious</button>
+                <button onclick="lookupWord('courageous')" class="px-4 py-1.5 bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-full hover:border-teal-400 hover:text-teal-600 dark:hover:text-teal-400 transition-all text-xs font-bold shadow-sm hover-bounce">🦁 courageous</button>
+                <button onclick="lookupWord('innovate')" class="px-4 py-1.5 bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-slate-700 rounded-full hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition-all text-xs font-bold shadow-sm hover-bounce">💡 innovate</button>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <section id="loading-state" class="hidden flex flex-col items-center justify-center py-16">
+            <div class="relative w-16 h-16">
+                <div class="w-16 h-16 border-4 border-amber-200 border-t-pink-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center text-amber-500">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl animate-pulse"></i>
+                </div>
+            </div>
+            <p class="mt-4 text-slate-600 dark:text-slate-300 font-spark font-bold text-base animate-pulse">Unlocking word magic...</p>
+        </section>
+
+        <!-- Error State -->
+        <section id="error-state" class="hidden text-center py-12 px-6 bg-white dark:bg-slate-800 rounded-3xl border-2 border-red-200 dark:border-slate-700 shadow-md">
+            <div class="w-20 h-20 bg-red-100 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-3xl flex items-center justify-center mx-auto text-3xl">
+                <i class="fa-solid fa-face-surprise"></i>
+            </div>
+            <h3 id="error-title" class="mt-4 text-2xl font-spark font-bold text-slate-900 dark:text-white">Word Not Found!</h3>
+            <p id="error-message" class="mt-2 text-slate-500 dark:text-slate-400 max-w-md mx-auto font-medium">We couldn't find definitions for that word. Double check your spelling or try another word!</p>
+        </section>
+
+        <!-- Search History / Breadcrumbs Navigation -->
+        <div id="history-container" class="hidden flex items-center space-x-2 text-xs text-slate-400 overflow-x-auto pb-1">
+            <span class="font-bold uppercase tracking-wider text-slate-400 flex items-center">
+                <i class="fa-solid fa-clock-rotate-left mr-1 text-amber-500"></i> Recent:
+            </span>
+            <div id="history-chips" class="flex items-center space-x-1.5"></div>
+        </div>
+
+        <!-- Word Content Display (Dictionary & Thesaurus) -->
+        <div id="word-content" class="hidden space-y-6">
+            
+            <!-- Header Card for Searched Word -->
+            <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border-2 border-amber-200 dark:border-slate-700 shadow-md relative overflow-hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-baseline space-x-3">
+                            <h2 id="display-word" class="text-4xl sm:text-6xl font-extrabold font-spark tracking-wide bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 bg-clip-text text-transparent"></h2>
+                            <span id="display-phonetic" class="text-xl sm:text-2xl text-purple-600 dark:text-purple-400 font-spark font-semibold"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <!-- Audio Button -->
+                        <button id="audio-btn" onclick="playAudio()" class="px-5 py-3.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl hover:opacity-90 transition-all flex items-center space-x-2.5 font-spark font-bold shadow-md hover-bounce">
+                            <i id="audio-icon" class="fa-solid fa-volume-high text-xl"></i>
+                            <span id="audio-label">Listen!</span>
+                        </button>
+                        
+                        <!-- Copy Word Button -->
+                        <button onclick="copyToClipboard(currentWordData.word)" class="p-3.5 bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all" title="Copy Word">
+                            <i class="fa-regular fa-copy text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs (Dictionary vs Thesaurus Overview) -->
+                <div class="flex border-b-2 border-slate-100 dark:border-slate-700 mt-8 gap-6">
+                    <button id="tab-dict-btn" onclick="switchTab('dictionary')" class="pb-3 text-base font-spark font-bold border-b-4 border-amber-500 text-amber-600 dark:text-amber-400 transition-colors flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Dictionary & Examples</span>
+                    </button>
+                    <button id="tab-thesaurus-btn" onclick="switchTab('thesaurus')" class="pb-3 text-base font-spark font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center space-x-2">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span>Alternative Words (Thesaurus)</span>
+                        <span id="synonym-count-badge" class="ml-1 px-2.5 py-0.5 text-xs bg-pink-100 dark:bg-pink-950 text-pink-600 dark:text-pink-300 rounded-full font-bold">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 1: DICTIONARY CONTENT -->
+            <div id="tab-dictionary-content" class="space-y-6">
+                <!-- Dynamic Parts of Speech Cards inserted here -->
+            </div>
+
+            <!-- TAB 2: THESAURUS CONTENT -->
+            <div id="tab-thesaurus-content" class="hidden space-y-6">
+                <!-- Grouped Alternatives inserted here -->
+            </div>
+        </div>
+
+        <!-- Favorites Drawer Slide-Over Modal -->
+        <div id="favorites-drawer" class="fixed inset-0 z-50 overflow-hidden hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="toggleFavoritesDrawer()"></div>
+            <div class="fixed inset-y-0 right-0 pl-10 max-w-full flex">
+                <div class="w-screen max-w-md bg-white dark:bg-slate-800 shadow-2xl flex flex-col">
+                    <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-amber-50 dark:bg-slate-900">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-star text-amber-400 text-2xl"></i>
+                            <h3 class="text-xl font-spark font-bold text-slate-900 dark:text-white">Saved Words</h3>
+                        </div>
+                        <button onclick="toggleFavoritesDrawer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div id="favorites-list" class="flex-1 overflow-y-auto p-6 space-y-3">
+                        <!-- Favorite items populate here -->
+                    </div>
+
+                    <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                        <span id="fav-total-text" class="text-xs font-bold text-slate-500">0 words saved</span>
+                        <button onclick="clearAllFavorites()" class="text-xs text-red-500 hover:underline font-bold">Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t-2 border-amber-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-500 font-medium">
+        <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="flex items-center space-x-1.5">
+                <i class="fa-solid fa-graduation-cap text-amber-500"></i>
+                <span>WordSpark — Designed for Students & Vocabulary Learners.</span>
+            </p>
+            <p class="text-purple-600 dark:text-purple-400 font-bold">
+                Click any word chip to inspect alternative words instantly! ✨
+            </p>
+        </div>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // App State
+        let currentWordData = null;
+        let activeAudioUrl = null;
+        let searchHistory = [];
+        let favorites = JSON.parse(localStorage.getItem('lexicraft_favorites') || '[]');
+
+        // Fallback local dictionary for instant response if offline or API limit
+        const LOCAL_FALLBACK_DB = {
+            "cheerful": {
+                word: "cheerful",
+                phonetic: "/ˈtʃɪə.fəl/",
+                audio: "",
+                meanings: [
+                    {
+                        partOfSpeech: "adjective",
+                        definitions: [
+                            {
+                                definition: "Noticeably happy and optimistic; bringing good feelings.",
+                                example: "She gave a cheerful wave to her friends in class."
+                            }
+                        ],
+                        synonyms: ["happy", "joyful", "sunny", "buoyant", "jolly", "upbeat"],
+                        antonyms: ["gloomy", "sad", "depressed"]
+                    }
+                ]
+            },
+            "curious": {
+                word: "curious",
+                phonetic: "/ˈkjʊə.ri.əs/",
+                audio: "",
+                meanings: [
+                    {
+                        partOfSpeech: "adjective",
+                        definitions: [
+                            {
+                                definition: "Eager to know or learn something new.",
+                                example: "Curious students always ask great questions."
+                            }
+                        ],
+                        synonyms: ["inquisitive", "interested", "keen", "eager"],
+                        antonyms: ["indifferent", "uninterested"]
+                    }
+                ]
+            },
+            "courageous": {
+                word: "courageous",
+                phonetic: "/kəˈreɪ.dʒəs/",
+                audio: "",
+                meanings: [
+                    {
+                        partOfSpeech: "adjective",
+                        definitions: [
+                            {
+                                definition: "Brave and bold when facing challenges.",
+                                example: "The courageous firefighter saved the kitten."
+                            }
+                        ],
+                        synonyms: ["brave", "valiant", "fearless", "heroic", "bold"],
+                        antonyms: ["cowardly", "fearful"]
+                    }
+                ]
+            },
+            "innovate": {
+                word: "innovate",
+                phonetic: "/ˈɪn.ə.veɪt/",
+                audio: "",
+                meanings: [
+                    {
+                        partOfSpeech: "verb",
+                        definitions: [
+                            {
+                                definition: "Create new ideas, methods, or cool inventions.",
+                                example: "Students innovate amazing projects during science fair!"
+                            }
+                        ],
+                        synonyms: ["pioneer", "create", "invent", "transform"],
+                        antonyms: ["copy", "imitate"]
+                    }
+                ]
+            }
+        };
+
+        // DOM Elements
+        const searchForm = document.getElementById('search-form');
+        const wordInput = document.getElementById('word-input');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const wordContent = document.getElementById('word-content');
+        const displayWord = document.getElementById('display-word');
+        const displayPhonetic = document.getElementById('display-phonetic');
+        const audioBtn = document.getElementById('audio-btn');
+        const tabDictContent = document.getElementById('tab-dictionary-content');
+        const tabThesaurusContent = document.getElementById('tab-thesaurus-content');
+        const historyContainer = document.getElementById('history-container');
+        const historyChips = document.getElementById('history-chips');
+        const bookmarkBtn = document.getElementById('bookmark-btn');
+        const bookmarkIcon = document.getElementById('bookmark-icon');
+        const favoritesList = document.getElementById('favorites-list');
+
+        // Virtual Assistant (Lexi) Logic
+        const assistantBubble = document.getElementById('assistant-bubble');
+        const assistantText = document.getElementById('assistant-text');
+        const assistantIcon = document.getElementById('assistant-icon');
+
+        const LEXI_TIPS = [
+            "Study Tip: Try using 2 new synonyms you find on WordSpark in your essay today!",
+            "Did you know? Clicking any colorful synonym badge instantly searches its definitions!",
+            "Listening Tip: Press the Listen button to hear native word pronunciations aloud!",
+            "Pro-tip: Save your favorite words by clicking the star icon to review them before exams!"
+        ];
+
+        const LEXI_SURPRISE_WORDS = ["cheerful", "curious", "courageous", "innovate", "ephemeral", "eloquent", "resilience", "brilliant"];
+
+        function toggleAssistantBubble() {
+            if (assistantBubble.classList.contains('hidden')) {
+                assistantBubble.classList.remove('hidden');
+                assistantIcon.className = 'fa-solid fa-face-laugh-beam';
+            } else {
+                assistantBubble.classList.add('hidden');
+                assistantIcon.className = 'fa-solid fa-face-smile-wink';
+            }
+        }
+
+        function setLexiMessage(msg, iconClass = 'fa-solid fa-face-smile-beam') {
+            assistantText.textContent = msg;
+            assistantIcon.className = iconClass;
+            assistantBubble.classList.remove('hidden');
+        }
+
+        function askAssistantTip() {
+            const randomTip = LEXI_TIPS[Math.floor(Math.random() * LEXI_TIPS.length)];
+            setLexiMessage(randomTip, 'fa-solid fa-lightbulb text-yellow-400');
+        }
+
+        function askAssistantRandomWord() {
+            const randomWord = LEXI_SURPRISE_WORDS[Math.floor(Math.random() * LEXI_SURPRISE_WORDS.length)];
+            setLexiMessage(`Let's explore "${randomWord}" together! 🚀`, 'fa-solid fa-rocket text-pink-400');
+            lookupWord(randomWord);
+        }
+
+        // Theme Toggle Setup
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            themeIcon.className = 'fa-solid fa-sun text-amber-400 text-xl';
+        } else {
+            document.documentElement.classList.remove('dark');
+            themeIcon.className = 'fa-solid fa-moon text-xl';
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+                themeIcon.className = 'fa-solid fa-moon text-xl';
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+                themeIcon.className = 'fa-solid fa-sun text-amber-400 text-xl';
+            }
+        });
+
+        // Event Listeners
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = wordInput.value.trim();
+            if (query) lookupWord(query);
+        });
+
+        // Dismiss Welcome Splash Screen
+        function dismissWelcomeScreen() {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    welcomeScreen.remove();
+                }, 750);
+            }
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            updateFavoritesUI();
+            lookupWord('cheerful');
+
+            // Hide welcome screen after introductory animation
+            setTimeout(dismissWelcomeScreen, 1800);
+        });
+
+        function resetToHome() {
+            wordInput.value = '';
+            lookupWord('cheerful');
+        }
+
+        // Main Search Lookup Function
+        async function lookupWord(word) {
+            const cleanWord = word.trim().toLowerCase();
+            if (!cleanWord) return;
+
+            wordInput.value = cleanWord;
+            showLoading(true);
+            hideError();
+            hideContent();
+
+            try {
+                // Fetch from Free Dictionary API
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
+                
+                if (!response.ok) {
+                    if (LOCAL_FALLBACK_DB[cleanWord]) {
+                        renderWordData(LOCAL_FALLBACK_DB[cleanWord]);
+                        addToHistory(cleanWord);
+                        setLexiMessage(`Found "${cleanWord}" in our local dictionary! 📖`, 'fa-solid fa-face-smile');
+                        return;
+                    }
+                    throw new Error('Word not found in dictionary');
+                }
+
+                const data = await response.json();
+                const processed = parseApiData(data[0]);
+                
+                renderWordData(processed);
+                addToHistory(cleanWord);
+                setLexiMessage(`Here are awesome definitions & alternative words for "${cleanWord}"! ✨`, 'fa-solid fa-face-laugh-sparkles');
+
+            } catch (err) {
+                if (LOCAL_FALLBACK_DB[cleanWord]) {
+                    renderWordData(LOCAL_FALLBACK_DB[cleanWord]);
+                    addToHistory(cleanWord);
+                    setLexiMessage(`Found "${cleanWord}"! 🌟`, 'fa-solid fa-face-smile');
+                } else {
+                    showError("Word Not Found!", `We couldn't find definitions for "${cleanWord}". Check spelling or try searching another word.`);
+                    setLexiMessage(`Oops! Couldn't find "${cleanWord}". Check spelling? 🧐`, 'fa-solid fa-face-frown');
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Parse API response into unified format
+        function parseApiData(entry) {
+            let phoneticText = entry.phonetic || '';
+            let audioUrl = '';
+
+            if (entry.phonetics && entry.phonetics.length > 0) {
+                for (let p of entry.phonetics) {
+                    if (!phoneticText && p.text) phoneticText = p.text;
+                    if (p.audio && p.audio.trim() !== '') {
+                        audioUrl = p.audio;
+                        if (!audioUrl.startsWith('http')) audioUrl = 'https:' + audioUrl;
+                    }
+                }
+            }
+
+            return {
+                word: entry.word,
+                phonetic: phoneticText,
+                audio: audioUrl,
+                meanings: entry.meanings || []
+            };
+        }
+
+        // Render Word Details to UI
+        function renderWordData(data) {
+            currentWordData = data;
+            
+            displayWord.textContent = data.word;
+            displayPhonetic.textContent = data.phonetic || '';
+            
+            activeAudioUrl = data.audio || null;
+            audioBtn.classList.remove('hidden');
+
+            updateBookmarkButtonState();
+            renderDictionaryTab(data.meanings);
+
+            const totalSynonyms = renderThesaurusTab(data.meanings);
+            document.getElementById('synonym-count-badge').textContent = totalSynonyms;
+
+            switchTab('dictionary');
+
+            wordContent.classList.remove('hidden');
+            bookmarkBtn.classList.remove('hidden');
+        }
+
+        // Render Dictionary Definitions Card Group
+        function renderDictionaryTab(meanings) {
+            tabDictContent.innerHTML = '';
+
+            if (!meanings || meanings.length === 0) {
+                tabDictContent.innerHTML = `<div class="p-6 bg-white dark:bg-slate-800 rounded-3xl text-slate-500 font-medium">No definitions found.</div>`;
+                return;
+            }
+
+            meanings.forEach((meaning) => {
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border-2 border-amber-100 dark:border-slate-700/80 shadow-md space-y-4";
+                
+                let posBadgeClass = "bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700";
+                
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3 border-b-2 border-slate-100 dark:border-slate-700/60 pb-3">
+                        <span class="px-3.5 py-1 text-xs font-spark font-bold uppercase tracking-wider rounded-full border-2 ${posBadgeClass}">
+                            ${meaning.partOfSpeech}
+                        </span>
+                        <span class="text-xs text-slate-400 font-bold">${meaning.definitions.length} definition${meaning.definitions.length > 1 ? 's' : ''}</span>
+                    </div>
+
+                    <ol class="space-y-4 mt-4 list-decimal list-inside text-slate-700 dark:text-slate-300 font-medium">
+                        ${meaning.definitions.map((defObj) => `
+                            <li class="pl-2 leading-relaxed">
+                                <span class="font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(defObj.definition)}</span>
+                                ${defObj.example ? `
+                                    <div class="mt-2 pl-4 border-l-4 border-pink-400 text-sm text-slate-500 dark:text-slate-400 italic bg-pink-50/40 dark:bg-slate-900/40 py-1.5 rounded-r-xl">
+                                        "${escapeHtml(defObj.example)}"
+                                    </div>
+                                ` : ''}
+                            </li>
+                        `).join('')}
+                    </ol>
+                `;
+
+                tabDictContent.appendChild(card);
+            });
+        }
+
+        // Render Thesaurus Alternatives grouped by Part of Speech
+        function renderThesaurusTab(meanings) {
+            tabThesaurusContent.innerHTML = '';
+            let grandTotalSynonyms = 0;
+
+            meanings.forEach((meaning) => {
+                let synSet = new Set(meaning.synonyms || []);
+                let antSet = new Set(meaning.antonyms || []);
+
+                if (meaning.definitions) {
+                    meaning.definitions.forEach(d => {
+                        if (d.synonyms) d.synonyms.forEach(s => synSet.add(s));
+                        if (d.antonyms) d.antonyms.forEach(a => antSet.add(a));
+                    });
+                }
+
+                const synonyms = Array.from(synSet);
+                const antonyms = Array.from(antSet);
+                grandTotalSynonyms += synonyms.length;
+
+                if (synonyms.length === 0 && antonyms.length === 0) return;
+
+                const section = document.createElement('div');
+                section.className = "bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border-2 border-amber-100 dark:border-slate-700/80 shadow-md space-y-5";
+
+                section.innerHTML = `
+                    <div class="flex items-center justify-between border-b-2 border-slate-100 dark:border-slate-700/60 pb-3">
+                        <span class="px-3.5 py-1 text-xs font-spark font-bold uppercase tracking-wider rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                            As a ${meaning.partOfSpeech}
+                        </span>
+                    </div>
+
+                    ${synonyms.length > 0 ? `
+                        <div>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center">
+                                <i class="fa-solid fa-sparkles text-emerald-500 mr-2"></i> Synonyms (Alternative Words)
+                            </h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${synonyms.map(syn => `
+                                    <button onclick="lookupWord('${escapeHtml(syn)}')" 
+                                            class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl text-sm font-bold transition-all shadow-sm hover-bounce">
+                                        ✨ ${escapeHtml(syn)}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${antonyms.length > 0 ? `
+                        <div class="mt-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center">
+                                <i class="fa-solid fa-right-left text-rose-500 mr-2"></i> Antonyms (Opposite Words)
+                            </h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${antonyms.map(ant => `
+                                    <button onclick="lookupWord('${escapeHtml(ant)}')" 
+                                            class="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border-2 border-rose-200 dark:border-rose-800 rounded-2xl text-sm font-bold transition-all shadow-sm hover-bounce">
+                                        🔄 ${escapeHtml(ant)}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+
+                tabThesaurusContent.appendChild(section);
+            });
+
+            if (grandTotalSynonyms === 0 && tabThesaurusContent.children.length === 0) {
+                tabThesaurusContent.innerHTML = `
+                    <div class="p-8 bg-white dark:bg-slate-800 rounded-3xl border-2 border-amber-100 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400 font-medium">
+                        <i class="fa-solid fa-face-meh text-3xl mb-2 text-amber-400"></i>
+                        <p>No direct alternative words listed for this word.</p>
+                    </div>
+                `;
+            }
+
+            return grandTotalSynonyms;
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            const dictTab = document.getElementById('tab-dict-btn');
+            const thesaurusTab = document.getElementById('tab-thesaurus-btn');
+            
+            if (tabName === 'dictionary') {
+                tabDictContent.classList.remove('hidden');
+                tabThesaurusContent.classList.add('hidden');
+                
+                dictTab.className = "pb-3 text-base font-spark font-bold border-b-4 border-amber-500 text-amber-600 dark:text-amber-400 transition-colors flex items-center space-x-2";
+                thesaurusTab.className = "pb-3 text-base font-spark font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center space-x-2";
+            } else {
+                tabDictContent.classList.add('hidden');
+                tabThesaurusContent.classList.remove('hidden');
+
+                dictTab.className = "pb-3 text-base font-spark font-bold border-b-4 border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors flex items-center space-x-2";
+                thesaurusTab.className = "pb-3 text-base font-spark font-bold border-b-4 border-pink-500 text-pink-600 dark:text-pink-400 transition-colors flex items-center space-x-2";
+            }
+        }
+
+        // Play Audio Pronunciation (API Audio + Web Speech Synthesis Fallback)
+        function playAudio() {
+            if (!currentWordData || !currentWordData.word) return;
+
+            const audioIcon = document.getElementById('audio-icon');
+            const audioBtn = document.getElementById('audio-btn');
+
+            audioIcon.className = 'fa-solid fa-volume-high text-xl animate-bounce';
+
+            const resetAudioUI = () => {
+                audioIcon.className = 'fa-solid fa-volume-high text-xl';
+            };
+
+            const speakWithSynthesis = () => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(currentWordData.word);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.9;
+
+                    utterance.onend = resetAudioUI;
+                    utterance.onerror = resetAudioUI;
+
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resetAudioUI();
+                    showToast('Audio pronunciation not supported on this browser.');
+                }
+            };
+
+            if (activeAudioUrl) {
+                const audio = new Audio(activeAudioUrl);
+                audio.play()
+                    .then(() => {
+                        audio.onended = resetAudioUI;
+                    })
+                    .catch(() => {
+                        speakWithSynthesis();
+                    });
+            } else {
+                speakWithSynthesis();
+            }
+        }
+
+        // History Management
+        function addToHistory(word) {
+            const clean = word.toLowerCase();
+            searchHistory = searchHistory.filter(w => w !== clean);
+            searchHistory.unshift(clean);
+            if (searchHistory.length > 6) searchHistory.pop();
+            renderHistoryUI();
+        }
+
+        function renderHistoryUI() {
+            if (searchHistory.length === 0) {
+                historyContainer.classList.add('hidden');
+                return;
+            }
+
+            historyContainer.classList.remove('hidden');
+            historyChips.innerHTML = searchHistory.map(w => `
+                <button onclick="lookupWord('${w}')" class="px-3 py-1 bg-amber-100/70 dark:bg-slate-700 hover:bg-amber-200 dark:hover:bg-slate-600 rounded-xl text-slate-800 dark:text-slate-200 font-bold transition-colors text-xs">
+                    ${w}
+                </button>
+            `).join('');
+        }
+
+        // Favorite Words Management
+        function toggleFavoriteCurrent() {
+            if (!currentWordData) return;
+
+            const index = favorites.findIndex(item => item.word.toLowerCase() === currentWordData.word.toLowerCase());
+            
+            if (index > -1) {
+                favorites.splice(index, 1);
+                showToast(`Removed "${currentWordData.word}" from saved words`);
+            } else {
+                favorites.push({
+                    word: currentWordData.word,
+                    phonetic: currentWordData.phonetic || '',
+                    date: new Date().toLocaleDateString()
+                });
+                showToast(`Saved "${currentWordData.word}"! ⭐`);
+            }
+
+            localStorage.setItem('lexicraft_favorites', JSON.stringify(favorites));
+            updateBookmarkButtonState();
+            updateFavoritesUI();
+        }
+
+        function updateBookmarkButtonState() {
+            if (!currentWordData) return;
+            const isFav = favorites.some(item => item.word.toLowerCase() === currentWordData.word.toLowerCase());
+            
+            if (isFav) {
+                bookmarkIcon.className = 'fa-solid fa-star text-xl text-amber-400';
+                bookmarkBtn.setAttribute('title', 'Remove from Saved');
+            } else {
+                bookmarkIcon.className = 'fa-regular fa-star text-xl';
+                bookmarkBtn.setAttribute('title', 'Save to Favorites');
+            }
+        }
+
+        function updateFavoritesUI() {
+            const favBadge = document.getElementById('fav-count-badge');
+            const totalText = document.getElementById('fav-total-text');
+
+            if (favorites.length > 0) {
+                favBadge.textContent = favorites.length;
+                favBadge.classList.remove('hidden');
+                totalText.textContent = `${favorites.length} word${favorites.length > 1 ? 's' : ''} saved`;
+                
+                favoritesList.innerHTML = favorites.map(fav => `
+                    <div class="p-4 bg-amber-50/50 dark:bg-slate-900/60 rounded-2xl border-2 border-amber-200 dark:border-slate-700/60 flex items-center justify-between group hover:border-pink-400 transition-all">
+                        <div class="cursor-pointer flex-1" onclick="lookupWord('${fav.word}'); toggleFavoritesDrawer();">
+                            <h4 class="font-spark font-bold text-slate-900 dark:text-white capitalize text-lg">${escapeHtml(fav.word)}</h4>
+                            <span class="text-xs text-purple-600 dark:text-purple-400 font-bold">${escapeHtml(fav.phonetic)}</span>
+                        </div>
+                        <button onclick="removeFavorite('${fav.word}')" class="text-slate-400 hover:text-red-500 p-2 transition-colors">
+                            <i class="fa-solid fa-trash-can text-base"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                favBadge.classList.add('hidden');
+                totalText.textContent = '0 words saved';
+                favoritesList.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 space-y-2">
+                        <i class="fa-regular fa-star text-4xl text-amber-400"></i>
+                        <p class="text-base font-bold text-slate-600 dark:text-slate-300">No saved words yet!</p>
+                        <p class="text-xs text-slate-400">Click the star icon on any word to save it for study.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function removeFavorite(word) {
+            favorites = favorites.filter(f => f.word.toLowerCase() !== word.toLowerCase());
+            localStorage.setItem('lexicraft_favorites', JSON.stringify(favorites));
+            updateBookmarkButtonState();
+            updateFavoritesUI();
+            showToast(`Removed "${word}"`);
+        }
+
+        function clearAllFavorites() {
+            if (favorites.length === 0) return;
+            favorites = [];
+            localStorage.setItem('lexicraft_favorites', JSON.stringify(favorites));
+            updateBookmarkButtonState();
+            updateFavoritesUI();
+            showToast('Cleared saved words');
+        }
+
+        function toggleFavoritesDrawer() {
+            const drawer = document.getElementById('favorites-drawer');
+            drawer.classList.toggle('hidden');
+        }
+
+        // Helper UI State Handlers
+        function showLoading(isLoading) {
+            if (isLoading) {
+                loadingState.classList.remove('hidden');
+            } else {
+                loadingState.classList.add('hidden');
+            }
+        }
+
+        function showError(title, message) {
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            errorState.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorState.classList.add('hidden');
+        }
+
+        function hideContent() {
+            wordContent.classList.add('hidden');
+            bookmarkBtn.classList.add('hidden');
+        }
+
+        // Toast Notification Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Copy Text Helper
+        function copyToClipboard(text) {
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast(`Copied "${text}" to clipboard!`);
+        }
+
+        // Security Utility to prevent XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
